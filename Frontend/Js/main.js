@@ -11,7 +11,17 @@ class ResumeMasterApp {
     this.loadingCounter = 0;
     this.interviewActive = false; // Track if interview is active
 
+    // Gemini API key is kept only in memory.
+    // It is NOT stored in localStorage, sessionStorage, cookies, or the server.
+    this.geminiApiKey = null;
+    this.apiKeyModalResolver = null;
+
     this.init();
+
+    // Clear the key when the page is refreshed/closed.
+    window.addEventListener("beforeunload", () => {
+      this.geminiApiKey = null;
+    });
   }
 
   init() {
@@ -117,6 +127,30 @@ class ResumeMasterApp {
       const navbar = document.querySelector(".navbar");
       navbar?.classList.toggle("scrolled", window.scrollY > 50);
     });
+
+    // Gemini API key modal
+    document.getElementById("saveApiKeyBtn")?.addEventListener("click", () => {
+      this.saveApiKey();
+    });
+
+    document
+      .getElementById("apiKeyInput")
+      ?.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          this.saveApiKey();
+        }
+      });
+
+    // If the modal is closed without saving, resolve as false.
+    document
+      .getElementById("apiKeyModal")
+      ?.addEventListener("hidden.bs.modal", () => {
+        if (this.apiKeyModalResolver) {
+          this.apiKeyModalResolver(false);
+          this.apiKeyModalResolver = null;
+        }
+      });
   }
 
   setupThemeToggle() {
@@ -132,6 +166,88 @@ class ResumeMasterApp {
       body.setAttribute("data-theme", newTheme);
       localStorage.setItem("theme", newTheme);
     });
+  }
+
+  // ============================================================
+  // GEMINI API KEY
+  // ============================================================
+
+  async ensureApiKey() {
+    // Already have a key in memory.
+    if (this.geminiApiKey) {
+      return true;
+    }
+
+    const modalElement = document.getElementById("apiKeyModal");
+
+    if (!modalElement || typeof bootstrap === "undefined") {
+      this.showToast("Gemini API key modal is unavailable.", "error");
+      return false;
+    }
+
+    const input = document.getElementById("apiKeyInput");
+
+    if (input) {
+      input.value = "";
+    }
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+
+    return new Promise((resolve) => {
+      this.apiKeyModalResolver = resolve;
+
+      modal.show();
+
+      setTimeout(() => {
+        input?.focus();
+      }, 300);
+    });
+  }
+
+  saveApiKey() {
+    const input = document.getElementById("apiKeyInput");
+    const key = input?.value.trim();
+
+    if (!key) {
+      this.showToast("Please enter your Gemini API key.", "error");
+      return;
+    }
+
+    // Store only in JavaScript memory.
+    this.geminiApiKey = key;
+
+    // Immediately clear the visible input field.
+    if (input) {
+      input.value = "";
+    }
+
+    const modalElement = document.getElementById("apiKeyModal");
+
+    if (modalElement && typeof bootstrap !== "undefined") {
+      const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+      modal.hide();
+    }
+
+    if (this.apiKeyModalResolver) {
+      this.apiKeyModalResolver(true);
+      this.apiKeyModalResolver = null;
+    }
+  }
+
+  getGeminiHeaders(includeContentType = false) {
+    if (!this.geminiApiKey) {
+      throw new Error("Gemini API key is required.");
+    }
+
+    const headers = {
+      "X-Gemini-API-Key": this.geminiApiKey,
+    };
+
+    if (includeContentType) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    return headers;
   }
 
   animateUploadCard(cardId) {
@@ -164,6 +280,7 @@ class ResumeMasterApp {
         area.style.transform = "";
 
         const file = e.dataTransfer.files[0];
+
         if (id === "resumeCard") {
           document.getElementById("resumeFile").files = e.dataTransfer.files;
           document.getElementById("resumeFileName").textContent =
@@ -172,6 +289,7 @@ class ResumeMasterApp {
           document.getElementById("jobFile").files = e.dataTransfer.files;
           document.getElementById("jobFileName").textContent = file?.name || "";
         }
+
         this.validateUploadForm();
       });
     });
@@ -206,6 +324,7 @@ class ResumeMasterApp {
   showLoading() {
     this.loadingCounter++;
     const spinner = document.getElementById("loadingSpinner");
+
     if (spinner) {
       spinner.classList.remove("d-none");
     }
@@ -213,11 +332,14 @@ class ResumeMasterApp {
 
   hideLoading() {
     this.loadingCounter--;
+
     if (this.loadingCounter <= 0) {
       const spinner = document.getElementById("loadingSpinner");
+
       if (spinner) {
         spinner.classList.add("d-none");
       }
+
       this.loadingCounter = 0;
     }
   }
@@ -225,16 +347,21 @@ class ResumeMasterApp {
   showToast(message, type = "info") {
     const container = document.getElementById("toastContainer");
     const toast = document.createElement("div");
+
     toast.className = `toast align-items-center text-white bg-${type === "error" ? "danger" : type} border-0`;
     toast.setAttribute("role", "alert");
+
     toast.innerHTML = `
       <div class="d-flex">
         <div class="toast-body">${message}</div>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
       </div>
     `;
+
     container.appendChild(toast);
+
     new bootstrap.Toast(toast, { delay: 5000 }).show();
+
     setTimeout(() => toast.remove(), 5000);
   }
 
@@ -253,11 +380,15 @@ class ResumeMasterApp {
 
     const response = await fetch(`${this.API_BASE}/api/parse-resume`, {
       method: "POST",
+      headers: this.getGeminiHeaders(),
       body: formData,
     });
+
     const data = await response.json();
+
     if (!response.ok || !data.success)
       throw new Error(data.error || "Upload failed");
+
     return data;
   }
 
@@ -266,21 +397,34 @@ class ResumeMasterApp {
     const jobFile = document.getElementById("jobFile").files[0];
     const jobText = document.getElementById("jobText").value.trim();
 
+    // Ask for the API key only when the user actually starts using AI.
+    const hasApiKey = await this.ensureApiKey();
+
+    if (!hasApiKey) {
+      return;
+    }
+
     this.showLoading();
+
     try {
       const parseData = await this.uploadFile(resumeFile);
+
       this.currentSessionId = parseData.session_id;
       this.parsedData = parseData.parsed;
 
       let jobContent = jobText;
+
       if (jobFile) {
         jobContent = `[Job description from file: ${jobFile.name}]`;
       }
+
       sessionStorage.setItem("jobDescription", jobContent);
 
       document.getElementById("parsedContent").innerHTML =
         `<pre class="mb-0">${JSON.stringify(parseData.parsed, null, 2)}</pre>`;
+
       document.getElementById("parsedPreview").classList.remove("d-none");
+
       document
         .getElementById("parsedPreview")
         .scrollIntoView({ behavior: "smooth" });
@@ -296,6 +440,7 @@ class ResumeMasterApp {
   editParsedData() {
     const content = document.getElementById("parsedContent").textContent;
     const textarea = document.createElement("textarea");
+
     textarea.className = "form-control";
     textarea.rows = 10;
     textarea.value = content;
@@ -305,47 +450,67 @@ class ResumeMasterApp {
     document.getElementById("editParsedBtn").disabled = true;
 
     const saveBtn = document.createElement("button");
+
     saveBtn.className = "action-btn confirm-btn";
     saveBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes';
+
     saveBtn.onclick = () => {
       try {
         this.parsedData = JSON.parse(textarea.value);
+
         document.getElementById("parsedContent").innerHTML =
           `<pre class="mb-0">${JSON.stringify(this.parsedData, null, 2)}</pre>`;
+
         document.getElementById("editParsedBtn").disabled = false;
+
         saveBtn.remove();
+
         this.showToast("Changes saved!", "success");
       } catch {
         this.showToast("Invalid JSON format", "error");
       }
     };
+
     document.querySelector(".preview-actions").appendChild(saveBtn);
   }
 
   confirmParsedData() {
     document.getElementById("parsedPreview").classList.add("d-none");
     document.getElementById("actionSection").classList.remove("d-none");
+
     document
       .getElementById("actionSection")
       .scrollIntoView({ behavior: "smooth" });
+
     this.showToast("Ready! Choose an action below.", "success");
   }
 
   async runEvaluation() {
+    // Make sure a key exists before calling Gemini.
+    const hasApiKey = await this.ensureApiKey();
+
+    if (!hasApiKey) {
+      return;
+    }
+
     const jobText = sessionStorage.getItem("jobDescription");
 
     this.showLoading();
+
     try {
       const response = await fetch(`${this.API_BASE}/api/evaluate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: this.getGeminiHeaders(true),
         body: JSON.stringify({
           session_id: this.currentSessionId,
           job_text: jobText,
         }),
       });
+
       const data = await response.json();
+
       if (!response.ok) throw new Error(data.error);
+
       this.displayEvaluationResults(data.evaluation);
     } catch (error) {
       this.showToast(error.message, "error");
@@ -434,24 +599,36 @@ class ResumeMasterApp {
         </div>
       </div>
     `;
+
     resultsDiv.scrollIntoView({ behavior: "smooth" });
   }
 
   async runTailoring() {
+    // Make sure a key exists before calling Gemini.
+    const hasApiKey = await this.ensureApiKey();
+
+    if (!hasApiKey) {
+      return;
+    }
+
     const jobText = sessionStorage.getItem("jobDescription");
 
     this.showLoading();
+
     try {
       const response = await fetch(`${this.API_BASE}/api/tailor`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: this.getGeminiHeaders(true),
         body: JSON.stringify({
           session_id: this.currentSessionId,
           job_text: jobText,
         }),
       });
+
       const data = await response.json();
+
       if (!response.ok) throw new Error(data.error);
+
       this.displayTailoringResults(data.suggestions);
     } catch (error) {
       this.showToast(error.message, "error");
@@ -463,13 +640,18 @@ class ResumeMasterApp {
   displayTailoringResults(suggestions) {
     const resultsDiv = document.getElementById("tailoringResults");
     const contentDiv = document.getElementById("tailoringContent");
+
     resultsDiv.classList.remove("d-none");
 
     if (typeof suggestions === "object") {
       let html = '<div class="tailoring-suggestions">';
 
       const sections = [
-        { key: "summary_section", title: "📝 Summary Section", icon: "fa-pen" },
+        {
+          key: "summary_section",
+          title: "📝 Summary Section",
+          icon: "fa-pen",
+        },
         {
           key: "experience_section",
           title: "💼 Experience Section",
@@ -480,18 +662,27 @@ class ResumeMasterApp {
           title: "🚀 Projects Section",
           icon: "fa-code",
         },
-        { key: "skills_section", title: "🔧 Skills Section", icon: "fa-tools" },
+        {
+          key: "skills_section",
+          title: "🔧 Skills Section",
+          icon: "fa-tools",
+        },
         {
           key: "volunteering_section",
           title: "🤝 Volunteering Section",
           icon: "fa-heart",
         },
-        { key: "general_tips", title: "💡 General Tips", icon: "fa-lightbulb" },
+        {
+          key: "general_tips",
+          title: "💡 General Tips",
+          icon: "fa-lightbulb",
+        },
       ];
 
       sections.forEach((section) => {
         if (suggestions[section.key]?.length) {
           html += `<h5 class="mt-4 mb-3"><i class="fas ${section.icon} me-2" style="color: var(--accent-primary);"></i>${section.title}</h5>`;
+
           suggestions[section.key].forEach((item) => {
             if (typeof item === "object" && item.suggestion) {
               html += `
@@ -516,12 +707,20 @@ class ResumeMasterApp {
     }
 
     resultsDiv.scrollIntoView({ behavior: "smooth" });
+
     this.showToast("Tailoring suggestions generated!", "success");
   }
 
   async startInterview() {
     if (!this.currentSessionId) {
       this.showToast("Please upload and parse your resume first", "error");
+      return;
+    }
+
+    // Make sure a key exists before opening the Gemini-powered WebSocket.
+    const hasApiKey = await this.ensureApiKey();
+
+    if (!hasApiKey) {
       return;
     }
 
@@ -545,6 +744,16 @@ class ResumeMasterApp {
 
     this.websocket.onopen = () => {
       console.log("WebSocket connected");
+
+      // Send the user's Gemini API key as the first WebSocket message.
+      // The key is NOT included in the WebSocket URL.
+      this.websocket.send(
+        JSON.stringify({
+          type: "auth",
+          api_key: this.geminiApiKey,
+        }),
+      );
+
       this.addMessage(
         "system",
         "Interview started. Type your responses below.",
@@ -562,9 +771,8 @@ class ResumeMasterApp {
       } else if (data.type === "prompt") {
         this.addMessage("system", data.data);
       } else if (data.type === "review") {
-        this.hideLoading(); // Hide loading when review arrives
+        this.hideLoading();
         this.displayInterviewReview(data.data);
-        // Interview is now complete - disable input
         this.disableInterviewInput();
       } else if (data.type === "connected") {
         this.addMessage("system", data.data);
@@ -574,7 +782,10 @@ class ResumeMasterApp {
         this.hideTypingIndicator();
       } else if (data.type === "processing_review") {
         this.addMessage("system", "📊 Analyzing your interview performance...");
-        this.showLoading(); // Show loading while processing review
+        this.showLoading();
+      } else if (data.type === "error") {
+        this.showToast(data.data || "Interview error", "error");
+        this.disableInterviewInput();
       }
     };
 
@@ -585,7 +796,7 @@ class ResumeMasterApp {
     this.websocket.onclose = (event) => {
       console.log("WebSocket closed", event.code, event.reason);
       this.hideTypingIndicator();
-      this.hideLoading(); // Hide loading if still showing
+      this.hideLoading();
       this.interviewActive = false;
     };
   }
@@ -604,6 +815,7 @@ class ResumeMasterApp {
 
   showTypingIndicator() {
     const indicator = document.getElementById("typingIndicator");
+
     if (indicator) {
       indicator.classList.remove("d-none");
     }
@@ -611,13 +823,14 @@ class ResumeMasterApp {
 
   hideTypingIndicator() {
     const indicator = document.getElementById("typingIndicator");
+
     if (indicator) {
       indicator.classList.add("d-none");
     }
   }
 
   sendMessage() {
-    if (!this.interviewActive) return; // Don't send if interview is not active
+    if (!this.interviewActive) return;
 
     const input = document.getElementById("interviewInput");
     const message = input.value.trim();
@@ -644,12 +857,15 @@ class ResumeMasterApp {
     const transcript = document.getElementById("interviewTranscript");
     const time = new Date().toLocaleTimeString();
     const div = document.createElement("div");
+
     div.className = `message ${sender}`;
+
     div.innerHTML = `
       <small class="text-muted">${time}</small><br>
       <strong>${sender === "ai" ? "🤖 Interviewer" : sender === "user" ? "👤 You" : "🔧 System"}:</strong>
       <p class="mb-0 mt-1">${text}</p>
     `;
+
     transcript.appendChild(div);
     transcript.scrollTop = transcript.scrollHeight;
   }
@@ -661,6 +877,7 @@ class ResumeMasterApp {
       // Determine hiring outcome based on score
       let hiringOutcome = "";
       let outcomeClass = "";
+
       if (data.overall_score >= 85) {
         hiringOutcome = "✅ STRONG HIRE - Excellent performance!";
         outcomeClass = "text-success";
@@ -715,6 +932,7 @@ class ResumeMasterApp {
 
       if (data.better_answers?.length) {
         html += '<h6 class="mb-3">💡 How You Should Have Answered</h6>';
+
         data.better_answers.forEach((a, index) => {
           html += `
             <div class="better-answer mb-3">
@@ -747,50 +965,50 @@ class ResumeMasterApp {
 
       const transcript = document.getElementById("interviewTranscript");
       const reviewDiv = document.createElement("div");
+
       reviewDiv.innerHTML = html;
+
       transcript.appendChild(reviewDiv);
       transcript.scrollTop = transcript.scrollHeight;
     } catch (error) {
       console.error("Error parsing review:", error);
+
       document.getElementById("interviewTranscript").innerHTML +=
         `<div class="review-card">${review}</div>`;
     } finally {
-      this.hideLoading(); // Ensure loading is hidden
+      this.hideLoading();
     }
   }
 
   endInterview() {
     if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
       this.websocket.send(JSON.stringify({ type: "end" }));
+
       this.addMessage(
         "system",
         "Ending interview. Analyzing your responses...",
       );
-      // Show loading immediately when ending interview
+
       this.showLoading();
 
-      // Disable input immediately to prevent further typing
       document.getElementById("interviewInput").disabled = true;
       document.getElementById("sendMessageBtn").disabled = true;
     } else {
-      // If already closed, just hide the section and go back
       this.returnToActionSection();
     }
+
     this.hideTypingIndicator();
   }
 
   startNewInterview() {
-    // Reset the interview section for a new interview
     document.getElementById("interviewTranscript").innerHTML = "";
     document.getElementById("interviewInput").value = "";
     document.getElementById("interviewInput").disabled = false;
     document.getElementById("sendMessageBtn").disabled = false;
 
-    // Show end button, hide new button
     document.getElementById("endInterviewBtn").classList.remove("d-none");
     document.getElementById("newInterviewBtn").classList.add("d-none");
 
-    // Start a new interview with the same session
     this.startInterview();
   }
 
