@@ -189,14 +189,8 @@ async def extract_job_description(job_file: UploadFile = File(...)):
                 content={"error": "Unsupported file type. Use PDF, DOCX, or TXT."}
             )
 
-        content = await resume.read()
-
-        if len(content) > 5 * 1024 * 1024:
-            return JSONResponse(
-                status_code=413,
-                content={"error": "File is too large. Maximum size is 5MB."}
-            )
-
+        content = await job_file.read()
+        
         # Match the 5 MB limit advertised by the frontend.
         if len(content) > 5 * 1024 * 1024:
             return JSONResponse(
