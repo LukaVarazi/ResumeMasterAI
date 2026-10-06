@@ -170,6 +170,67 @@ async def root():
     return {"message": "ResumeMaster API", "status": "running"}
 
 
+@app.post("/api/extract-job-description")
+async def extract_job_description(job_file: UploadFile = File(...)):
+    """Extract text from an uploaded job-description file without using Gemini."""
+
+    try:
+        if not job_file.filename:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "No job-description file provided"}
+            )
+
+        filename = job_file.filename.lower()
+
+        if not filename.endswith((".pdf", ".docx", ".txt")):
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Unsupported file type. Use PDF, DOCX, or TXT."}
+            )
+
+        content = await resume.read()
+
+        if len(content) > 5 * 1024 * 1024:
+            return JSONResponse(
+                status_code=413,
+                content={"error": "File is too large. Maximum size is 5MB."}
+            )
+
+        # Match the 5 MB limit advertised by the frontend.
+        if len(content) > 5 * 1024 * 1024:
+            return JSONResponse(
+                status_code=413,
+                content={"error": "File is too large. Maximum size is 5MB."}
+            )
+
+        if filename.endswith(".pdf"):
+            text = extract_text_from_pdf(content)
+        elif filename.endswith(".docx"):
+            text = extract_text_from_docx(content)
+        else:
+            text = content.decode("utf-8", errors="ignore")
+
+        text = text.strip()
+
+        if not text:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Could not extract any text from the file."}
+            )
+
+        return {
+            "success": True,
+            "text": text
+        }
+
+    except Exception as e:
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
+
 
 @app.post("/api/parse-resume")
 

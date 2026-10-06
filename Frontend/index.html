@@ -3,52 +3,76 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ResumeMaster | AI Career Assistant</title>
 
-    <!-- Bootstrap 5 CSS -->
+    <title>ResumeMaster | AI Career Assistant</title>
+    <meta
+      name="description"
+      content="Analyze, optimize, and practice interviews with your resume using Google Gemini AI."
+    />
+
+    <!-- Bootstrap -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
-    <!-- Font Awesome Icons -->
+
+    <!-- Font Awesome -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <!-- Google Fonts -->
+
+    <!-- Google Font -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <!-- AOS Animation Library -->
+
+    <!-- AOS -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="Style/global.css" />
   </head>
+
   <body data-theme="dark">
-    <!-- Theme Toggle -->
+    <!-- =========================
+         Theme Toggle
+    ========================== -->
     <div class="theme-toggle">
-      <button id="themeToggle" class="theme-btn">
+      <button
+        type="button"
+        id="themeToggle"
+        class="theme-btn"
+        aria-label="Toggle light and dark mode"
+      >
         <i class="fas fa-sun"></i>
         <i class="fas fa-moon"></i>
       </button>
     </div>
 
-    <!-- Navigation -->
+    <!-- =========================
+         Navigation
+    ========================== -->
     <nav class="navbar navbar-expand-lg fixed-top">
       <div class="container">
         <a class="navbar-brand" href="#">
           <span class="brand-icon">⚡</span>
           ResumeMaster<span class="brand-dot">.</span>
         </a>
+
         <button
           class="navbar-toggler"
           type="button"
           data-bs-toggle="collapse"
           data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
         >
           <span class="navbar-toggler-icon"></span>
         </button>
+
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto">
             <li class="nav-item">
@@ -58,7 +82,8 @@
                 data-bs-toggle="modal"
                 data-bs-target="#aboutModal"
               >
-                <i class="fas fa-info-circle me-1"></i>About
+                <i class="fas fa-circle-info me-1"></i>
+                About
               </a>
             </li>
           </ul>
@@ -66,330 +91,633 @@
       </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero-section">
-      <div class="container">
-        <div class="row align-items-center min-vh-100">
-          <div class="col-lg-6" data-aos="fade-right" data-aos-duration="1000">
-            <div class="hero-badge">
-              <span class="badge-pulse"></span>
-              AI-Powered Career Assistant
+    <main>
+      <!-- =========================
+           Hero
+      ========================== -->
+      <section class="hero-section">
+        <div class="hero-glow hero-glow-one"></div>
+        <div class="hero-glow hero-glow-two"></div>
+
+        <div class="container">
+          <div class="row align-items-center min-vh-100">
+            <div
+              class="col-lg-6"
+              data-aos="fade-right"
+              data-aos-duration="1000"
+            >
+              <div class="hero-badge">
+                <span class="badge-pulse"></span>
+                AI-Powered Career Assistant
+              </div>
+
+              <h1 class="hero-title">
+                Elevate Your<br />
+                <span class="gradient-text">Career Journey</span>
+              </h1>
+
+              <p class="hero-description">
+                Analyze your resume against a job, improve your application, and
+                practice interviews with an AI assistant powered by Google
+                Gemini.
+              </p>
+
+              <div class="hero-highlights">
+                <div class="highlight-item">
+                  <div class="highlight-icon">
+                    <i class="fas fa-chart-line"></i>
+                  </div>
+                  <div>
+                    <strong>Match Analysis</strong>
+                    <span>Understand your fit</span>
+                  </div>
+                </div>
+
+                <div class="highlight-item">
+                  <div class="highlight-icon">
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                  </div>
+                  <div>
+                    <strong>Resume Optimization</strong>
+                    <span>Improve your application</span>
+                  </div>
+                </div>
+
+                <div class="highlight-item">
+                  <div class="highlight-icon">
+                    <i class="fas fa-comments"></i>
+                  </div>
+                  <div>
+                    <strong>Mock Interviews</strong>
+                    <span>Practice your answers</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <h1 class="hero-title">
-              Elevate Your<br />
-              <span class="gradient-text">Career Journey</span>
-            </h1>
-            <p class="hero-description">
-              Upload your resume and job description for intelligent analysis,
-              personalized interview practice, and AI-powered optimization.
+
+            <div class="col-lg-6" data-aos="fade-left" data-aos-duration="1000">
+              <div class="hero-visual">
+                <div class="visual-orbit orbit-one"></div>
+                <div class="visual-orbit orbit-two"></div>
+                <div class="pulse-circle"></div>
+
+                <div class="floating-card card-1">
+                  <div class="floating-icon">
+                    <i class="fas fa-file-lines"></i>
+                  </div>
+                  <span>Resume Analysis</span>
+                </div>
+
+                <div class="floating-card card-2">
+                  <div class="floating-icon">
+                    <i class="fas fa-comments"></i>
+                  </div>
+                  <span>Mock Interview</span>
+                </div>
+
+                <div class="floating-card card-3">
+                  <div class="floating-icon">
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                  </div>
+                  <span>AI Optimization</span>
+                </div>
+
+                <div class="hero-center-icon">
+                  <i class="fas fa-robot"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================
+           Upload Section
+      ========================== -->
+      <section class="upload-section">
+        <div class="container">
+          <div class="section-header text-center" data-aos="fade-up">
+            <span class="section-eyebrow">GET STARTED</span>
+            <h2>Start Your Analysis</h2>
+            <p>
+              Upload your resume and provide the job description you want to
+              target.
             </p>
-            <div class="hero-stats">
-              <div class="stat-item">
-                <div class="stat-number">98%</div>
-                <div class="stat-label">Match Accuracy</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-number">10k+</div>
-                <div class="stat-label">Resumes Analyzed</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-number">5min</div>
-                <div class="stat-label">Average Session</div>
-              </div>
-            </div>
           </div>
-          <div class="col-lg-6" data-aos="fade-left" data-aos-duration="1000">
-            <div class="hero-visual">
-              <div class="floating-card card-1">
-                <i class="fas fa-file-alt"></i>
-                <span>Resume Analysis</span>
-              </div>
-              <div class="floating-card card-2">
-                <i class="fas fa-comments"></i>
-                <span>Mock Interview</span>
-              </div>
-              <div class="floating-card card-3">
-                <i class="fas fa-magic"></i>
-                <span>AI Optimization</span>
-              </div>
-              <div class="pulse-circle"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
-    <!-- Upload Section -->
-    <section class="upload-section">
-      <div class="container">
-        <div class="section-header text-center" data-aos="fade-up">
-          <h2>Start Your Journey</h2>
-          <p>Upload your documents and let AI do the rest</p>
-        </div>
-
-        <div class="upload-container" data-aos="fade-up" data-aos-delay="200">
-          <form id="uploadForm">
-            <div class="upload-grid">
-              <!-- Resume Upload Card -->
-              <div class="upload-card" id="resumeCard">
-                <div class="upload-card-inner">
-                  <div class="upload-icon-wrapper">
-                    <i class="fas fa-file-pdf"></i>
-                  </div>
-                  <h3>Resume</h3>
-                  <p>PDF, DOCX, or TXT (Max 5MB)</p>
-                  <input
-                    type="file"
-                    id="resumeFile"
-                    accept=".pdf,.docx,.txt"
-                    hidden
-                  />
-                  <button type="button" class="upload-btn" id="selectResumeBtn">
-                    <i class="fas fa-cloud-upload-alt me-2"></i>Choose File
-                  </button>
-                  <div id="resumeFileName" class="file-name"></div>
-                  <div class="upload-progress" id="resumeProgress">
-                    <div class="progress-bar"></div>
-                  </div>
+          <!-- API Key -->
+          <div class="api-key-panel" data-aos="fade-up">
+            <div class="api-key-header">
+              <div class="api-key-heading">
+                <div class="paste-header">
+                  <i class="fas fa-key"></i>
+                  <span>Your Gemini API Key</span>
                 </div>
+
+                <p class="api-key-note">
+                  Required to use the AI features.
+                  <strong>Bring your own Gemini API key.</strong>
+                </p>
               </div>
 
-              <!-- Job Description Card -->
-              <div class="upload-card" id="jobCard">
-                <div class="upload-card-inner">
-                  <div class="upload-icon-wrapper">
-                    <i class="fas fa-briefcase"></i>
-                  </div>
-                  <h3>Job Description</h3>
-                  <p>Upload file or paste text below</p>
-                  <input
-                    type="file"
-                    id="jobFile"
-                    accept=".pdf,.docx,.txt"
-                    hidden
-                  />
-                  <button type="button" class="upload-btn" id="selectJobBtn">
-                    <i class="fas fa-cloud-upload-alt me-2"></i>Choose File
-                  </button>
-                  <div id="jobFileName" class="file-name"></div>
-                </div>
-              </div>
+              <span class="api-key-status" id="apiKeyStatus"> Not set </span>
             </div>
 
-            <div class="paste-area" data-aos="fade-up">
-              <div class="paste-header">
-                <i class="fas fa-paste"></i>
-                <span>Or paste job description</span>
+            <div class="api-key-input-row">
+              <div class="api-key-input-wrap">
+                <input
+                  type="password"
+                  id="apiKeyInput"
+                  class="api-key-input"
+                  placeholder="Paste your Gemini API key"
+                  autocomplete="off"
+                  spellcheck="false"
+                  aria-describedby="apiKeyHelp"
+                />
+
+                <button
+                  type="button"
+                  class="api-key-visibility"
+                  id="toggleApiKeyVisibility"
+                  aria-label="Show API key"
+                >
+                  <i class="fas fa-eye"></i>
+                </button>
               </div>
-              <textarea
-                id="jobText"
-                rows="4"
-                placeholder="Paste the job description here..."
-              ></textarea>
+
+              <button type="button" class="api-key-save-btn" id="saveApiKeyBtn">
+                <i class="fas fa-check me-2"></i>
+                Use Key
+              </button>
             </div>
 
-            <div class="text-center mt-5" data-aos="fade-up">
-              <button
-                type="submit"
-                class="process-btn"
-                id="processBtn"
-                disabled
+            <p class="api-key-create mb-0">
+              Need an API key?
+              <a
+                href="https://ai.google.dev/gemini-api/docs/api-key"
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                <span class="btn-text">Process with AI</span>
-                <span class="btn-icon"><i class="fas fa-arrow-right"></i></span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </section>
-
-    <!-- Parsed Preview Section -->
-    <section id="parsedPreview" class="parsed-section d-none">
-      <div class="container">
-        <div class="preview-card" data-aos="zoom-in">
-          <div class="preview-header">
-            <div class="header-left">
-              <i class="fas fa-robot"></i>
-              <h3>AI Analysis Complete</h3>
-            </div>
-            <span class="preview-badge">Step 1 of 2</span>
-          </div>
-          <div class="preview-body">
-            <div class="parsed-content">
-              <pre id="parsedContent"></pre>
-            </div>
-            <div class="preview-actions">
-              <button class="action-btn edit-btn" id="editParsedBtn">
-                <i class="fas fa-edit me-2"></i>Edit Information
-              </button>
-              <button class="action-btn confirm-btn" id="confirmParsedBtn">
-                <i class="fas fa-check me-2"></i>Confirm & Continue
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Action Section -->
-    <section id="actionSection" class="action-section d-none">
-      <div class="container">
-        <div class="section-header text-center" data-aos="fade-up">
-          <h2>Choose Your Path</h2>
-          <p>Select the service you need</p>
-        </div>
-
-        <div class="action-grid">
-          <!-- Evaluation Card -->
-          <div class="action-card" data-aos="flip-left" data-aos-delay="100">
-            <div class="card-corner"></div>
-            <div class="action-icon">
-              <i class="fas fa-chart-line"></i>
-            </div>
-            <h3>Match Analysis</h3>
-            <p>
-              Get detailed insights on how your resume aligns with the job
-              requirements
+                Create one through Google AI Studio →
+              </a>
             </p>
-            <ul class="feature-list">
-              <li><i class="fas fa-check"></i>Skills matching</li>
-              <li><i class="fas fa-check"></i>Gap analysis</li>
-              <li><i class="fas fa-check"></i>Improvement tips</li>
-            </ul>
-            <button class="card-btn" id="evaluateBtn">
-              <span>Start Analysis</span>
-              <i class="fas fa-arrow-right"></i>
-            </button>
-          </div>
 
-          <!-- Tailoring Card -->
-          <div class="action-card" data-aos="flip-left" data-aos-delay="200">
-            <div class="card-corner"></div>
-            <div class="action-icon">
-              <i class="fas fa-magic"></i>
-            </div>
-            <h3>Resume Optimization</h3>
-            <p>
-              Receive specific suggestions to tailor your resume for the
-              position
+            <p class="api-key-help" id="apiKeyHelp">
+              Your key is kept only in this page's memory. It is not saved to
+              localStorage, sessionStorage, cookies, or a database. Refreshing
+              the page clears it.
             </p>
-            <ul class="feature-list">
-              <li><i class="fas fa-check"></i>Keyword optimization</li>
-              <li><i class="fas fa-check"></i>ATS-friendly format</li>
-              <li><i class="fas fa-check"></i>Impactful phrasing</li>
-            </ul>
-            <button class="card-btn" id="tailorBtn">
-              <span>Optimize Resume</span>
-              <i class="fas fa-arrow-right"></i>
-            </button>
           </div>
 
-          <!-- Interview Card -->
-          <div class="action-card" data-aos="flip-left" data-aos-delay="300">
-            <div class="card-corner"></div>
-            <div class="action-icon">
-              <i class="fas fa-comments"></i>
+          <!-- Privacy Notice -->
+          <div class="privacy-notice" data-aos="fade-up">
+            <div class="privacy-icon">
+              <i class="fas fa-shield-halved"></i>
             </div>
-            <h3>Mock Interview</h3>
-            <p>Practice with an AI interviewer in a text-based chat</p>
-            <ul class="feature-list">
-              <li><i class="fas fa-check"></i>Natural conversation</li>
-              <li><i class="fas fa-check"></i>Real-time feedback</li>
-              <li><i class="fas fa-check"></i>Performance review</li>
-            </ul>
-            <button class="card-btn" id="startInterviewBtn">
-              <span>Start Interview</span>
-              <i class="fas fa-arrow-right"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
 
-    <!-- Results Sections -->
-    <section id="evaluationResults" class="results-section d-none">
-      <div class="container">
-        <div class="result-card" data-aos="fade-up"></div>
-      </div>
-    </section>
+            <div class="privacy-content">
+              <h4>Privacy & AI Use</h4>
 
-    <section id="tailoringResults" class="results-section d-none">
-      <div class="container">
-        <div class="result-card tailoring-card" data-aos="fade-up">
-          <div class="result-header">
-            <i class="fas fa-magic"></i>
-            <h3>Tailoring Suggestions</h3>
-          </div>
-          <div class="result-body" id="tailoringContent"></div>
-        </div>
-      </div>
-    </section>
+              <p>
+                ResumeMaster sends the resume and job information you provide to
+                Google Gemini through your API key to generate results.
+                <strong>
+                  Do not upload passwords, financial information, government ID
+                  numbers, confidential business information, or other sensitive
+                  information you do not want processed by an AI service.
+                </strong>
+              </p>
 
-    <!-- Interview Section -->
-    <section id="interviewSection" class="interview-section d-none">
-      <div class="container">
-        <div class="interview-container" data-aos="zoom-in">
-          <div class="interview-header">
-            <div class="header-left">
-              <i class="fas fa-comments"></i>
-              <h3>Chat Interview</h3>
-            </div>
-            <div class="interview-status" id="interviewStatus">
-              <span class="status-dot"></span>
-              Connected
+              <p class="mb-0">
+                ResumeMaster does not intentionally store your Gemini API key.
+                The key is held in page memory while you use the site and is
+                cleared when you refresh or close the page. You are responsible
+                for the information you submit and for your Gemini API key and
+                its usage.
+              </p>
             </div>
           </div>
-          <div class="interview-body">
-            <div id="interviewTranscript" class="transcript-box"></div>
-            <div class="chat-input-container">
-              <input
-                type="text"
-                id="interviewInput"
-                class="chat-input"
-                placeholder="Type your response..."
-                autocomplete="off"
-              />
-              <button class="send-btn" id="sendMessageBtn">
-                <i class="fas fa-paper-plane"></i>
-              </button>
-            </div>
-            <div class="interview-footer">
-              <div>
-                <button class="end-btn" id="endInterviewBtn">
-                  <i class="fas fa-stop me-2"></i>End Interview
+
+          <!-- Upload Form -->
+          <div class="upload-container" data-aos="fade-up" data-aos-delay="150">
+            <form id="uploadForm">
+              <div class="upload-grid">
+                <!-- Resume -->
+                <div class="upload-card" id="resumeCard">
+                  <div class="upload-card-inner">
+                    <div class="upload-icon-wrapper">
+                      <i class="fas fa-file-lines"></i>
+                    </div>
+
+                    <span class="upload-step">01</span>
+
+                    <h3>Resume</h3>
+
+                    <p>
+                      Upload your current resume.
+                      <br />
+                      PDF, DOCX, or TXT · Max 5MB
+                    </p>
+
+                    <input
+                      type="file"
+                      id="resumeFile"
+                      accept=".pdf,.docx,.txt"
+                      hidden
+                    />
+
+                    <button
+                      type="button"
+                      class="upload-btn"
+                      id="selectResumeBtn"
+                    >
+                      <i class="fas fa-cloud-arrow-up me-2"></i>
+                      Choose File
+                    </button>
+
+                    <div id="resumeFileName" class="file-name"></div>
+
+                    <div class="upload-progress" id="resumeProgress">
+                      <div class="progress-bar"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Job Description -->
+                <div class="upload-card" id="jobCard">
+                  <div class="upload-card-inner">
+                    <div class="upload-icon-wrapper">
+                      <i class="fas fa-briefcase"></i>
+                    </div>
+
+                    <span class="upload-step">02</span>
+
+                    <h3>Job Description</h3>
+
+                    <p>
+                      Upload the job posting or paste it below.
+                      <br />
+                      PDF, DOCX, or TXT · Max 5MB
+                    </p>
+
+                    <input
+                      type="file"
+                      id="jobFile"
+                      accept=".pdf,.docx,.txt"
+                      hidden
+                    />
+
+                    <button type="button" class="upload-btn" id="selectJobBtn">
+                      <i class="fas fa-cloud-arrow-up me-2"></i>
+                      Choose File
+                    </button>
+
+                    <div id="jobFileName" class="file-name"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Job Text -->
+              <div class="paste-area" data-aos="fade-up">
+                <div class="paste-header">
+                  <i class="fas fa-paste"></i>
+                  <span>Or paste job description</span>
+                </div>
+
+                <textarea
+                  id="jobText"
+                  rows="6"
+                  placeholder="Paste the complete job description here..."
+                ></textarea>
+
+                <div class="paste-footer">
+                  <span>
+                    <i class="fas fa-circle-info me-1"></i>
+                    You can either upload a file or paste the job description.
+                  </span>
+                </div>
+              </div>
+
+              <!-- Process -->
+              <div class="process-area" data-aos="fade-up">
+                <button
+                  type="submit"
+                  class="process-btn"
+                  id="processBtn"
+                  disabled
+                >
+                  <span class="btn-text">Process with AI</span>
+                  <span class="btn-icon">
+                    <i class="fas fa-arrow-right"></i>
+                  </span>
                 </button>
-                <button class="start-btn d-none" id="newInterviewBtn">
-                  <i class="fas fa-redo-alt me-2"></i>New Interview
+
+                <p class="process-note">
+                  Your Gemini API key must be provided before processing.
+                </p>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================
+           Parsed Resume Preview
+      ========================== -->
+      <section id="parsedPreview" class="parsed-section d-none">
+        <div class="container">
+          <div class="preview-card" data-aos="zoom-in">
+            <div class="preview-header">
+              <div class="header-left">
+                <div class="header-icon">
+                  <i class="fas fa-robot"></i>
+                </div>
+
+                <div>
+                  <span class="result-eyebrow">RESUME PARSED</span>
+                  <h3>Review Your Information</h3>
+                </div>
+              </div>
+
+              <span class="preview-badge"> Step 1 of 2 </span>
+            </div>
+
+            <div class="preview-body">
+              <div class="parsed-content">
+                <pre id="parsedContent"></pre>
+              </div>
+
+              <div class="preview-actions">
+                <button class="action-btn edit-btn" id="editParsedBtn">
+                  <i class="fas fa-pen me-2"></i>
+                  Edit Information
+                </button>
+
+                <button class="action-btn confirm-btn" id="confirmParsedBtn">
+                  <i class="fas fa-check me-2"></i>
+                  Confirm & Continue
                 </button>
               </div>
-              <div class="typing-indicator d-none" id="typingIndicator">
-                <span></span>
-                <span></span>
-                <span></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================
+           Action Section
+      ========================== -->
+      <section id="actionSection" class="action-section d-none">
+        <div class="container">
+          <div class="section-header text-center" data-aos="fade-up">
+            <span class="section-eyebrow">CHOOSE A TOOL</span>
+            <h2>What Would You Like To Do?</h2>
+            <p>
+              Use your parsed resume and target job description with any of the
+              tools below.
+            </p>
+          </div>
+
+          <div class="action-grid">
+            <!-- Match -->
+            <div class="action-card" data-aos="fade-up" data-aos-delay="100">
+              <div class="card-number">01</div>
+
+              <div class="action-icon">
+                <i class="fas fa-chart-line"></i>
+              </div>
+
+              <h3>Match Analysis</h3>
+
+              <p>
+                See how closely your resume aligns with the target job and
+                identify the most important gaps.
+              </p>
+
+              <ul class="feature-list">
+                <li>
+                  <i class="fas fa-check"></i>
+                  Skills matching
+                </li>
+                <li>
+                  <i class="fas fa-check"></i>
+                  Gap analysis
+                </li>
+                <li>
+                  <i class="fas fa-check"></i>
+                  Improvement tips
+                </li>
+              </ul>
+
+              <button class="card-btn" id="evaluateBtn">
+                <span>Start Analysis</span>
+                <i class="fas fa-arrow-right"></i>
+              </button>
+            </div>
+
+            <!-- Optimization -->
+            <div class="action-card" data-aos="fade-up" data-aos-delay="200">
+              <div class="card-number">02</div>
+
+              <div class="action-icon">
+                <i class="fas fa-wand-magic-sparkles"></i>
+              </div>
+
+              <h3>Resume Optimization</h3>
+
+              <p>
+                Get targeted suggestions to improve your resume for the position
+                you are applying for.
+              </p>
+
+              <ul class="feature-list">
+                <li>
+                  <i class="fas fa-check"></i>
+                  Keyword optimization
+                </li>
+                <li>
+                  <i class="fas fa-check"></i>
+                  ATS-friendly suggestions
+                </li>
+                <li>
+                  <i class="fas fa-check"></i>
+                  Stronger phrasing
+                </li>
+              </ul>
+
+              <button class="card-btn" id="tailorBtn">
+                <span>Optimize Resume</span>
+                <i class="fas fa-arrow-right"></i>
+              </button>
+            </div>
+
+            <!-- Interview -->
+            <div class="action-card" data-aos="fade-up" data-aos-delay="300">
+              <div class="card-number">03</div>
+
+              <div class="action-icon">
+                <i class="fas fa-comments"></i>
+              </div>
+
+              <h3>Mock Interview</h3>
+
+              <p>
+                Practice answering questions in a text-based interview tailored
+                to your resume and target position.
+              </p>
+
+              <ul class="feature-list">
+                <li>
+                  <i class="fas fa-check"></i>
+                  Natural conversation
+                </li>
+                <li>
+                  <i class="fas fa-check"></i>
+                  Real-time interaction
+                </li>
+                <li>
+                  <i class="fas fa-check"></i>
+                  Performance review
+                </li>
+              </ul>
+
+              <button class="card-btn" id="startInterviewBtn">
+                <span>Start Interview</span>
+                <i class="fas fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================
+           Match Analysis Results
+      ========================== -->
+      <section id="evaluationResults" class="results-section d-none">
+        <div class="container">
+          <div class="result-card" data-aos="fade-up"></div>
+        </div>
+      </section>
+
+      <!-- =========================
+           Tailoring Results
+      ========================== -->
+      <section id="tailoringResults" class="results-section d-none">
+        <div class="container">
+          <div class="result-card tailoring-card" data-aos="fade-up">
+            <div class="result-header">
+              <div class="header-left">
+                <div class="header-icon">
+                  <i class="fas fa-wand-magic-sparkles"></i>
+                </div>
+
+                <div>
+                  <span class="result-eyebrow">AI SUGGESTIONS</span>
+                  <h3>Resume Optimization</h3>
+                </div>
+              </div>
+            </div>
+
+            <div class="result-body" id="tailoringContent"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================
+           Interview
+      ========================== -->
+      <section id="interviewSection" class="interview-section d-none">
+        <div class="container">
+          <div class="interview-container" data-aos="zoom-in">
+            <div class="interview-header">
+              <div class="header-left">
+                <div class="header-icon">
+                  <i class="fas fa-comments"></i>
+                </div>
+
+                <div>
+                  <span class="result-eyebrow">PRACTICE SESSION</span>
+                  <h3>Mock Interview</h3>
+                </div>
+              </div>
+
+              <div class="interview-status" id="interviewStatus">
+                <span class="status-dot"></span>
+                Connected
+              </div>
+            </div>
+
+            <div class="interview-body">
+              <div
+                id="interviewTranscript"
+                class="transcript-box"
+                aria-live="polite"
+              ></div>
+
+              <div class="chat-input-container">
+                <input
+                  type="text"
+                  id="interviewInput"
+                  class="chat-input"
+                  placeholder="Type your response..."
+                  autocomplete="off"
+                />
+
+                <button
+                  type="button"
+                  class="send-btn"
+                  id="sendMessageBtn"
+                  aria-label="Send message"
+                >
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </div>
+
+              <div class="interview-footer">
+                <div>
+                  <button type="button" class="end-btn" id="endInterviewBtn">
+                    <i class="fas fa-stop me-2"></i>
+                    End Interview
+                  </button>
+
+                  <button
+                    type="button"
+                    class="start-btn d-none"
+                    id="newInterviewBtn"
+                  >
+                    <i class="fas fa-redo-alt me-2"></i>
+                    New Interview
+                  </button>
+                </div>
+
+                <div class="typing-indicator d-none" id="typingIndicator">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </main>
 
-    <!-- Gemini API Key Modal -->
+    <!-- =========================
+         About Modal
+    ========================== -->
     <div
       class="modal fade"
-      id="apiKeyModal"
+      id="aboutModal"
       tabindex="-1"
-      data-bs-backdrop="static"
-      aria-labelledby="apiKeyModalLabel"
+      aria-labelledby="aboutModalLabel"
       aria-hidden="true"
     >
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="apiKeyModalLabel">
-              <i class="fas fa-key me-2"></i>
-              Gemini API Key
-            </h5>
+            <div>
+              <span class="result-eyebrow">ABOUT</span>
+              <h5 class="modal-title" id="aboutModalLabel">ResumeMaster</h5>
+            </div>
 
             <button
               type="button"
@@ -401,80 +729,34 @@
 
           <div class="modal-body">
             <p>
-              Enter your Gemini API key to use ResumeMaster's AI features. Your
-              key is kept only in this browser session's memory and is not saved
-              to localStorage, sessionStorage, cookies, or the server.
+              ResumeMaster is an AI-powered career assistant designed to help
+              you prepare for job applications.
             </p>
 
-            <div class="mb-3">
-              <label for="apiKeyInput" class="form-label">
-                Gemini API Key
-              </label>
-
-              <input
-                type="password"
-                class="form-control"
-                id="apiKeyInput"
-                placeholder="Paste your Gemini API key"
-                autocomplete="off"
-                spellcheck="false"
-              />
-            </div>
-
-            <p class="mb-0 text-muted small">
-              Refreshing the page clears the key from memory.
-            </p>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="modal-btn" data-bs-dismiss="modal">
-              Cancel
-            </button>
-
-            <button type="button" class="modal-btn" id="saveApiKeyBtn">
-              Continue
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- About Modal -->
-    <div class="modal fade" id="aboutModal" tabindex="-1">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="fas fa-robot me-2"></i>
-              About ResumeMaster
-            </h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <p>
-              ResumeMaster is an AI-powered career assistant that helps you:
-            </p>
             <ul class="feature-list">
               <li>
-                <i class="fas fa-check-circle"></i> Analyze resume-job matches
+                <i class="fas fa-check-circle"></i>
+                Analyze resume-job matches
               </li>
               <li>
-                <i class="fas fa-check-circle"></i> Practice interviews with AI
+                <i class="fas fa-check-circle"></i>
+                Optimize resumes for specific roles
               </li>
               <li>
-                <i class="fas fa-check-circle"></i> Optimize resumes for
-                specific roles
+                <i class="fas fa-check-circle"></i>
+                Practice interviews with AI
               </li>
             </ul>
-            <p class="mt-3 mb-0 text-muted">
-              Powered by Google Gemini AI. Real-time processing, no data
-              storage.
-            </p>
+
+            <div class="modal-disclaimer">
+              <i class="fas fa-shield-halved"></i>
+              <p class="mb-0">
+                AI processing is provided through Google Gemini using the API
+                key supplied by the user. Do not submit sensitive information.
+              </p>
+            </div>
           </div>
+
           <div class="modal-footer">
             <button type="button" class="modal-btn" data-bs-dismiss="modal">
               Close
@@ -484,7 +766,9 @@
       </div>
     </div>
 
-    <!-- Loading Spinner -->
+    <!-- =========================
+         Loading Spinner
+    ========================== -->
     <div id="loadingSpinner" class="spinner-overlay d-none">
       <div class="spinner-content">
         <div class="spinner"></div>
@@ -492,19 +776,31 @@
       </div>
     </div>
 
-    <!-- Toast Container -->
-    <div id="toastContainer" class="toast-container"></div>
+    <!-- =========================
+         Toasts
+    ========================== -->
+    <div
+      id="toastContainer"
+      class="toast-container"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
 
-    <!-- Scripts -->
+    <!-- =========================
+         Scripts
+    ========================== -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
     <script>
       AOS.init({
-        duration: 1000,
+        duration: 850,
         once: true,
         easing: "ease-out-cubic",
       });
     </script>
+
     <script src="JS/main.js"></script>
   </body>
 </html>
