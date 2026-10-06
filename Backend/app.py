@@ -29,15 +29,12 @@ import traceback
 import asyncio
 
 
-
 # Latest Gemini import
 
 from google import genai
 
 
-
 from pathlib import Path
-
 
 
 # ==================== PATHS ====================
@@ -50,9 +47,7 @@ print("🚀 Initializing ResumeMaster API...")
 print("=" * 50)
 
 
-
 app = FastAPI(title="ResumeMaster API")
-
 
 
 # Enable CORS
@@ -72,7 +67,6 @@ app.add_middleware(
 )
 
 
-
 # Paths
 
 TEMP_DIR = BASE_DIR.parent / "Temp"
@@ -82,35 +76,88 @@ TEMP_DIR.mkdir(exist_ok=True)
 print(f"📁 Temp directory: {TEMP_DIR}")
 
 
-
 # Session storage
 
 sessions = {}
 
 
+# Upload limits
+
+MAX_FILE_SIZE = 5 * 1024 * 1024
+
+ALLOWED_FILE_EXTENSIONS = (".pdf", ".docx", ".txt")
+
+
+class GeminiServiceError(Exception):
+    """Expected Gemini/API failure that can be shown safely to the client."""
+
+    def __init__(self, message, status_code=503):
+        super().__init__(message)
+        self.message = message
+        self.status_code = status_code
+
 
 # ==================== HELPER FUNCTIONS ====================
 
 
-
 async def call_gemini(prompt, api_key):
     """Call Gemini using the API key supplied by the current user request."""
+
+    if not api_key or not api_key.strip():
+        raise GeminiServiceError("Gemini API key is required.", 400)
+
     try:
-        if not api_key or not api_key.strip():
-            return "Error: Gemini API key is required"
 
         print("  🤖 Calling Gemini...")
-        client = genai.Client(api_key=api_key.strip())
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
-        return response.text
-    except Exception as e:
-        print(f"❌ Gemini error: {e}")
-        traceback.print_exc()
-        return f"Error: {str(e)}"
 
+        client = genai.Client(api_key=api_key.strip())
+
+        response = client.models.generate_content(
+
+            model="gemini-2.5-flash",
+
+            contents=prompt
+
+        )
+
+        return response.text
+
+    except Exception as e:
+
+        print(f"❌ Gemini error: {e}")
+
+        traceback.print_exc()
+
+        error_text = str(e)
+
+        if "429" in error_text:
+
+            message = (
+                "Gemini is temporarily rate-limited or your API quota was reached. "
+                "Please try again later."
+            )
+
+            status_code = 429
+
+        elif "503" in error_text or "UNAVAILABLE" in error_text:
+
+            message = (
+                "Gemini is temporarily unavailable. "
+                "Please try again in a moment."
+            )
+
+            status_code = 503
+
+        else:
+
+            message = (
+                "Gemini could not process the request. "
+                "Please check your API key and try again."
+            )
+
+            status_code = 502
+
+        raise GeminiServiceError(message, status_code) from e
 
 
 def extract_text_from_pdf(file_bytes):
@@ -121,12 +168,13 @@ def extract_text_from_pdf(file_bytes):
 
         pdf_reader = PyPDF2.PdfReader(pdf_file)
 
-        return "\n".join([p.extract_text() for p in pdf_reader.pages if p.extract_text()])
+        return "\n".join(
+            [p.extract_text() for p in pdf_reader.pages if p.extract_text()]
+        )
 
     except Exception as e:
 
         raise Exception(f"PDF extraction error: {e}")
-
 
 
 def extract_text_from_docx(file_bytes):
@@ -137,19 +185,24 @@ def extract_text_from_docx(file_bytes):
 
         doc = Document(docx_file)
 
-        return "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
+        return "\n".join(
+            [para.text for para in doc.paragraphs if para.text.strip()]
+        )
 
     except Exception as e:
 
         raise Exception(f"DOCX extraction error: {e}")
 
 
-
 def clean_old_sessions():
 
     current = time.time()
 
-    expired = [sid for sid, s in sessions.items() if current - s.get("timestamp", 0) > 3600]
+    expired = [
+        sid
+        for sid, s in sessions.items()
+        if current - s.get("timestamp", 0) > 3600
+    ]
 
     for sid in expired:
 
@@ -158,13 +211,10 @@ def clean_old_sessions():
     return len(expired)
 
 
-
 # ==================== API ENDPOINTS ====================
 
 
-
 @app.get("/")
-
 async def root():
 
     return {"message": "ResumeMaster API", "status": "running"}
@@ -175,7 +225,9 @@ async def extract_job_description(job_file: UploadFile = File(...)):
     """Extract text from an uploaded job-description file without using Gemini."""
 
     try:
+
         if not job_file.filename:
+
             return JSONResponse(
                 status_code=400,
                 content={"error": "No job-description file provided"}
@@ -183,34 +235,47 @@ async def extract_job_description(job_file: UploadFile = File(...)):
 
         filename = job_file.filename.lower()
 
-        if not filename.endswith((".pdf", ".docx", ".txt")):
+        if not filename.endswith(ALLOWED_FILE_EXTENSIONS):
+
             return JSONResponse(
                 status_code=400,
-                content={"error": "Unsupported file type. Use PDF, DOCX, or TXT."}
+                content={
+                    "error": "Unsupported file type. Use PDF, DOCX, or TXT."
+                }
             )
 
         content = await job_file.read()
-        
-        # Match the 5 MB limit advertised by the frontend.
-        if len(content) > 5 * 1024 * 1024:
+
+        if len(content) > MAX_FILE_SIZE:
+
             return JSONResponse(
                 status_code=413,
-                content={"error": "File is too large. Maximum size is 5MB."}
+                content={
+                    "error": "File is too large. Maximum size is 5MB."
+                }
             )
 
         if filename.endswith(".pdf"):
+
             text = extract_text_from_pdf(content)
+
         elif filename.endswith(".docx"):
+
             text = extract_text_from_docx(content)
+
         else:
+
             text = content.decode("utf-8", errors="ignore")
 
         text = text.strip()
 
         if not text:
+
             return JSONResponse(
                 status_code=400,
-                content={"error": "Could not extract any text from the file."}
+                content={
+                    "error": "Could not extract any text from the file."
+                }
             )
 
         return {
@@ -219,7 +284,9 @@ async def extract_job_description(job_file: UploadFile = File(...)):
         }
 
     except Exception as e:
+
         traceback.print_exc()
+
         return JSONResponse(
             status_code=500,
             content={"error": str(e)}
@@ -227,34 +294,66 @@ async def extract_job_description(job_file: UploadFile = File(...)):
 
 
 @app.post("/api/parse-resume")
-
-async def parse_resume(resume: UploadFile = File(...), gemini_api_key: str = Header(..., alias="X-Gemini-API-Key")):
+async def parse_resume(
+    resume: UploadFile = File(...),
+    gemini_api_key: str = Header(
+        ...,
+        alias="X-Gemini-API-Key"
+    )
+):
 
     """Parse resume using Gemini"""
 
     session_id = str(uuid.uuid4())
 
-
-
     try:
 
-        # Extract text
+        # Validate uploaded file
+
+        if not resume.filename:
+
+            return JSONResponse(
+                status_code=400,
+                content={"error": "No resume file provided"}
+            )
+
+        filename = resume.filename.lower()
+
+        if not filename.endswith(ALLOWED_FILE_EXTENSIONS):
+
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": "Unsupported file type. Use PDF, DOCX, or TXT."
+                }
+            )
+
+        # Read uploaded file
 
         content = await resume.read()
 
-        if resume.filename.lower().endswith('.pdf'):
+        if len(content) > MAX_FILE_SIZE:
+
+            return JSONResponse(
+                status_code=413,
+                content={
+                    "error": "File is too large. Maximum size is 5MB."
+                }
+            )
+
+        # Extract text
+
+        if filename.endswith(".pdf"):
 
             text = extract_text_from_pdf(content)
 
-        elif resume.filename.lower().endswith('.docx'):
+        elif filename.endswith(".docx"):
 
             text = extract_text_from_docx(content)
 
         else:
 
-            text = content.decode('utf-8', errors='ignore')
-
-
+            text = content.decode("utf-8", errors="ignore")
 
         # Parse with Gemini
 
@@ -386,31 +485,51 @@ IMPORTANT: Extract ALL experiences, ALL projects, ALL volunteering, ALL skills.
 
 Return ONLY the JSON, no other text."""
 
+        # Handle Gemini errors cleanly
 
+        try:
 
-        response = await call_gemini(prompt, gemini_api_key)
+            response = await call_gemini(
+                prompt,
+                gemini_api_key
+            )
 
+        except GeminiServiceError as e:
 
+            return JSONResponse(
+                status_code=e.status_code,
+                content={"error": e.message}
+            )
 
         # Extract JSON from response
 
-        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        json_match = re.search(
+            r'\{.*\}',
+            response,
+            re.DOTALL
+        )
 
         if json_match:
 
             try:
 
-                parsed = json.loads(json_match.group(0))
+                parsed = json.loads(
+                    json_match.group(0)
+                )
 
             except:
 
-                parsed = {"error": "Could not parse JSON", "raw": response[:500]}
+                parsed = {
+                    "error": "Could not parse JSON",
+                    "raw": response[:500]
+                }
 
         else:
 
-            parsed = {"error": "No JSON found", "raw": response[:500]}
-
-
+            parsed = {
+                "error": "No JSON found",
+                "raw": response[:500]
+            }
 
         # Store session
 
@@ -428,23 +547,30 @@ Return ONLY the JSON, no other text."""
 
         }
 
-
-
-        return {"success": True, "session_id": session_id, "parsed": parsed}
-
-
+        return {
+            "success": True,
+            "session_id": session_id,
+            "parsed": parsed
+        }
 
     except Exception as e:
 
         traceback.print_exc()
 
-        return JSONResponse(status_code=500, content={"error": str(e)})
-
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
 
 
 @app.post("/api/evaluate")
-
-async def evaluate_resume(request: dict, gemini_api_key: str = Header(..., alias="X-Gemini-API-Key")):
+async def evaluate_resume(
+    request: dict,
+    gemini_api_key: str = Header(
+        ...,
+        alias="X-Gemini-API-Key"
+    )
+):
 
     """Strict evaluation of resume against job"""
 
@@ -452,19 +578,16 @@ async def evaluate_resume(request: dict, gemini_api_key: str = Header(..., alias
 
     job_text = request.get("job_text")
 
-
-
     session = sessions.get(session_id)
 
     if not session:
 
-        return JSONResponse(status_code=404, content={"error": "Session expired"})
-
-
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Session expired"}
+        )
 
     session["job_text"] = job_text
-
-
 
     prompt = f"""You are an EXTREMELY STRICT HR analyst. Evaluate this candidate:
 
@@ -526,35 +649,60 @@ Return a JSON object with EXACTLY these fields:
 
 Return ONLY the JSON, no other text."""
 
+    try:
 
+        response = await call_gemini(
+            prompt,
+            gemini_api_key
+        )
 
-    response = await call_gemini(prompt, gemini_api_key)
+    except GeminiServiceError as e:
 
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"error": e.message}
+        )
 
-
-    json_match = re.search(r'\{.*\}', response, re.DOTALL)
+    json_match = re.search(
+        r'\{.*\}',
+        response,
+        re.DOTALL
+    )
 
     if json_match:
 
         try:
 
-            result = json.loads(json_match.group(0))
+            result = json.loads(
+                json_match.group(0)
+            )
 
-            return {"success": True, "evaluation": result}
+            return {
+                "success": True,
+                "evaluation": result
+            }
 
         except:
 
             pass
 
-
-
-    return {"success": True, "evaluation": {"match_score": 50, "reasoning": "Could not parse evaluation"}}
-
+    return {
+        "success": True,
+        "evaluation": {
+            "match_score": 50,
+            "reasoning": "Could not parse evaluation"
+        }
+    }
 
 
 @app.post("/api/tailor")
-
-async def tailor_resume(request: dict, gemini_api_key: str = Header(..., alias="X-Gemini-API-Key")):
+async def tailor_resume(
+    request: dict,
+    gemini_api_key: str = Header(
+        ...,
+        alias="X-Gemini-API-Key"
+    )
+):
 
     """Get tailoring suggestions - STRICTLY based on existing content only"""
 
@@ -562,15 +710,14 @@ async def tailor_resume(request: dict, gemini_api_key: str = Header(..., alias="
 
     job_text = request.get("job_text")
 
-
-
     session = sessions.get(session_id)
 
     if not session:
 
-        return JSONResponse(status_code=404, content={"error": "Session expired"})
-
-
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Session expired"}
+        )
 
     prompt = f"""You are a professional resume writer. Provide specific tailoring suggestions with explanations.
 
@@ -736,35 +883,61 @@ Be VERY careful with removal suggestions - only suggest removing if the content 
 
 Return ONLY the JSON, no other text."""
 
+    try:
 
+        response = await call_gemini(
+            prompt,
+            gemini_api_key
+        )
 
-    response = await call_gemini(prompt, gemini_api_key)
+    except GeminiServiceError as e:
 
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"error": e.message}
+        )
 
-
-    json_match = re.search(r'\{.*\}', response, re.DOTALL)
+    json_match = re.search(
+        r'\{.*\}',
+        response,
+        re.DOTALL
+    )
 
     if json_match:
 
         try:
 
-            result = json.loads(json_match.group(0))
+            result = json.loads(
+                json_match.group(0)
+            )
 
-            return {"success": True, "suggestions": result}
+            return {
+                "success": True,
+                "suggestions": result
+            }
 
         except:
 
             pass
 
-
-
-    return {"success": True, "suggestions": {"general_tips": [{"suggestion": response[:500], "reason": "General advice"}]}}
-
+    return {
+        "success": True,
+        "suggestions": {
+            "general_tips": [
+                {
+                    "suggestion": response[:500],
+                    "reason": "General advice"
+                }
+            ]
+        }
+    }
 
 
 @app.websocket("/ws/interview/{session_id}")
-
-async def websocket_interview(websocket: WebSocket, session_id: str):
+async def websocket_interview(
+    websocket: WebSocket,
+    session_id: str
+):
 
     """Text-based chat interview with strict evaluation"""
 
@@ -772,52 +945,75 @@ async def websocket_interview(websocket: WebSocket, session_id: str):
 
     # Receive the user's Gemini API key as the first WebSocket message.
     # It is kept only in this connection's local memory and is never stored in a session.
+
     try:
-        auth_data = await asyncio.wait_for(websocket.receive_json(), timeout=15.0)
+
+        auth_data = await asyncio.wait_for(
+            websocket.receive_json(),
+            timeout=15.0
+        )
+
     except Exception:
+
         await websocket.close(code=1008)
+
         return
 
     if auth_data.get("type") != "auth" or not auth_data.get("api_key"):
-        await websocket.send_json({"type": "error", "data": "Gemini API key is required."})
+
+        await websocket.send_json(
+            {
+                "type": "error",
+                "data": "Gemini API key is required."
+            }
+        )
+
         await websocket.close(code=1008)
+
         return
 
-    api_key = str(auth_data["api_key"]).strip()
-
-
+    api_key = str(
+        auth_data["api_key"]
+    ).strip()
 
     session = sessions.get(session_id)
 
     if not session:
 
-        await websocket.send_json({"error": "Session expired"})
+        await websocket.send_json(
+            {
+                "error": "Session expired"
+            }
+        )
 
         await websocket.close()
 
         return
 
-
-
-    review_sent = False  # Flag to track if review was sent
-
+    review_sent = False
 
 
     try:
 
-        job_text = session.get("job_text", "General interview")
+        job_text = session.get(
+            "job_text",
+            "General interview"
+        )
 
         session["interview_history"] = []
 
 
-
         # Send connection confirmation
 
-        await websocket.send_json({"type": "connected", "data": "Interview started. Type your responses below."})
+        await websocket.send_json(
+            {
+                "type": "connected",
+                "data": "Interview started. Type your responses below."
+            }
+        )
 
 
-
-        # Get first question - mix of difficult and typical questions based on resume and job
+        # Get first question
 
         first_prompt = f"""You are a professional interviewer conducting a challenging interview. Ask the FIRST question.
 
@@ -885,20 +1081,37 @@ Start with a challenging question based on their resume and the job requirements
 
 Return ONLY the question, no other text."""
 
+        try:
 
+            first_q = await call_gemini(
+                first_prompt,
+                api_key
+            )
 
-        first_q = await call_gemini(first_prompt, api_key)
+        except GeminiServiceError as e:
 
-        if first_q.startswith("Error:"):
+            print(
+                f"⚠️ First interview question failed: {e.message}"
+            )
 
-            first_q = "Tell me about a challenging project you worked on and how you overcame obstacles."
+            first_q = (
+                "Tell me about a challenging project you "
+                "worked on and how you overcame obstacles."
+            )
 
+        await websocket.send_json(
+            {
+                "type": "question",
+                "data": first_q
+            }
+        )
 
-
-        await websocket.send_json({"type": "question", "data": first_q})
-
-        session["interview_history"].append({"role": "ai", "content": first_q})
-
+        session["interview_history"].append(
+            {
+                "role": "ai",
+                "content": first_q
+            }
+        )
 
 
         # Interview loop
@@ -907,39 +1120,54 @@ Return ONLY the question, no other text."""
 
             try:
 
-                # Show typing indicator before waiting for response
+                # Show typing indicator
 
-                await websocket.send_json({"type": "typing"})
-
-
+                await websocket.send_json(
+                    {
+                        "type": "typing"
+                    }
+                )
 
                 # Wait for user response
 
-                data = await asyncio.wait_for(websocket.receive_json(), timeout=120.0)
-
-
+                data = await asyncio.wait_for(
+                    websocket.receive_json(),
+                    timeout=120.0
+                )
 
                 if data["type"] == "answer":
 
-                    user_answer = data.get("data", "")
-
-
+                    user_answer = data.get(
+                        "data",
+                        ""
+                    )
 
                     # Show user's message
 
-                    await websocket.send_json({"type": "message", "data": f"You: {user_answer}"})
+                    await websocket.send_json(
+                        {
+                            "type": "message",
+                            "data": f"You: {user_answer}"
+                        }
+                    )
 
-                    session["interview_history"].append({"role": "user", "content": user_answer})
+                    session["interview_history"].append(
+                        {
+                            "role": "user",
+                            "content": user_answer
+                        }
+                    )
+
+                    # Show typing indicator
+
+                    await websocket.send_json(
+                        {
+                            "type": "typing"
+                        }
+                    )
 
 
-
-                    # Show typing indicator while generating next question
-
-                    await websocket.send_json({"type": "typing"})
-
-
-
-                    # Get next question - maintain the mix of difficult and typical
+                    # Get next question
 
                     next_prompt = f"""Continue the interview. Ask ONE follow-up question based on their last answer.
 
@@ -987,86 +1215,118 @@ Base your question on:
 
 Return ONLY the question, no other text."""
 
+                    try:
 
+                        next_q = await call_gemini(
+                            next_prompt,
+                            api_key
+                        )
 
-                    next_q = await call_gemini(next_prompt, api_key)
+                    except GeminiServiceError as e:
 
-                    if next_q.startswith("Error:"):
+                        print(
+                            f"⚠️ Follow-up interview question failed: {e.message}"
+                        )
 
-                        next_q = "Can you elaborate more on that experience?"
-
-
+                        next_q = (
+                            "Can you elaborate more on that experience?"
+                        )
 
                     # Hide typing indicator and send question
 
-                    await websocket.send_json({"type": "stop_typing"})
+                    await websocket.send_json(
+                        {
+                            "type": "stop_typing"
+                        }
+                    )
 
-                    await websocket.send_json({"type": "question", "data": next_q})
+                    await websocket.send_json(
+                        {
+                            "type": "question",
+                            "data": next_q
+                        }
+                    )
 
-                    session["interview_history"].append({"role": "ai", "content": next_q})
-
-
+                    session["interview_history"].append(
+                        {
+                            "role": "ai",
+                            "content": next_q
+                        }
+                    )
 
                 elif data["type"] == "end":
 
                     break
 
 
-
             except asyncio.TimeoutError:
 
-                await websocket.send_json({"type": "prompt", "data": "Still there? Take your time."})
+                await websocket.send_json(
+                    {
+                        "type": "prompt",
+                        "data": "Still there? Take your time."
+                    }
+                )
 
             except Exception as e:
 
-                print(f"Loop error: {e}")
+                print(
+                    f"Loop error: {e}"
+                )
 
                 break
 
 
+        # Generate strict interview review
 
-        # Generate strict interview review - SMART last question handling
+        if len(session["interview_history"]) > 2:
 
-        if len(session["interview_history"]) > 2:  # Only if there was actual conversation
+            print(
+                "📊 Generating strict interview review..."
+            )
 
-            print("📊 Generating strict interview review...")
+            # Send processing indicator
 
+            await websocket.send_json(
+                {
+                    "type": "processing_review",
+                    "data": "Analyzing interview performance..."
+                }
+            )
 
-
-            # Send processing indicator to frontend
-
-            await websocket.send_json({"type": "processing_review", "data": "Analyzing interview performance..."})
-
-
-
-            # SMART HANDLING: Only exclude unanswered questions, keep all answered ones
+            # Only include answered questions
 
             review_history = []
 
+            if (
+                session["interview_history"]
+                and session["interview_history"][-1]["role"] == "ai"
+            ):
 
+                review_history = (
+                    session["interview_history"][:-1]
+                )
 
-            # Check if the last message is from AI (unanswered question)
-
-            if session["interview_history"] and session["interview_history"][-1]["role"] == "ai":
-
-                # Last message is an unanswered question - exclude only that one
-
-                review_history = session["interview_history"][:-1]
-
-                print(f"Excluding last unanswered question from review")
+                print(
+                    "Excluding last unanswered question from review"
+                )
 
             else:
 
-                # All questions were answered, include everything
+                review_history = (
+                    session["interview_history"]
+                )
 
-                review_history = session["interview_history"]
+                print(
+                    "All questions answered, including full history"
+                )
 
-                print(f"All questions answered, including full history")
-
-
-
-            print(f"Reviewing {len(review_history)} messages (excluded {len(session['interview_history']) - len(review_history)} unanswered questions)")
-
+            print(
+                f"Reviewing {len(review_history)} messages "
+                f"(excluded "
+                f"{len(session['interview_history']) - len(review_history)} "
+                f"unanswered questions)"
+            )
 
 
             review_prompt = f"""You are an EXTREMELY STRICT interview coach. Review this interview and provide brutally honest feedback, just like a strict HR evaluation.
@@ -1189,37 +1449,91 @@ This evaluation should be just as strict as the resume evaluation.
 
 Return ONLY the JSON, no other text."""
 
+            try:
+
+                review = await call_gemini(
+                    review_prompt,
+                    api_key
+                )
+
+            except GeminiServiceError as e:
+
+                print(
+                    f"⚠️ Interview review failed: {e.message}"
+                )
+
+                try:
+
+                    await websocket.send_json(
+                        {
+                            "type": "review",
+                            "data": {
+                                "error": e.message
+                            }
+                        }
+                    )
+
+                    review_sent = True
+
+                    await asyncio.sleep(0.5)
+
+                except Exception:
+
+                    pass
+
+                review = None
 
 
-            review = await call_gemini(review_prompt, api_key)
-
-
-
-            json_match = re.search(r'\{.*\}', review, re.DOTALL)
+            json_match = (
+                re.search(
+                    r'\{.*\}',
+                    review,
+                    re.DOTALL
+                )
+                if review
+                else None
+            )
 
             if json_match:
 
                 try:
 
-                    review_data = json.loads(json_match.group(0))
+                    review_data = json.loads(
+                        json_match.group(0)
+                    )
 
-                    await websocket.send_json({"type": "review", "data": review_data})
+                    await websocket.send_json(
+                        {
+                            "type": "review",
+                            "data": review_data
+                        }
+                    )
 
-                    print("✅ Interview review sent successfully")
+                    print(
+                        "✅ Interview review sent successfully"
+                    )
 
                     review_sent = True
-
-                    # Small delay to ensure client receives it
 
                     await asyncio.sleep(0.5)
 
                 except Exception as e:
 
-                    print(f"❌ Error sending review JSON: {e}")
+                    print(
+                        f"❌ Error sending review JSON: {e}"
+                    )
 
                     try:
 
-                        await websocket.send_json({"type": "review", "data": {"error": "Could not generate review", "raw": review[:500]}})
+                        await websocket.send_json(
+                            {
+                                "type": "review",
+                                "data": {
+                                    "error": "Could not generate review",
+                                    "raw": review[:500]
+                                }
+                            }
+                        )
 
                         review_sent = True
 
@@ -1229,13 +1543,23 @@ Return ONLY the JSON, no other text."""
 
                         pass
 
-            else:
+            elif review:
 
-                print("❌ No JSON found in review response")
+                print(
+                    "❌ No JSON found in review response"
+                )
 
                 try:
 
-                    await websocket.send_json({"type": "review", "data": {"error": "Could not generate review", "raw": review[:500]}})
+                    await websocket.send_json(
+                        {
+                            "type": "review",
+                            "data": {
+                                "error": "Could not generate review",
+                                "raw": review[:500]
+                            }
+                        }
+                    )
 
                     review_sent = True
 
@@ -1251,7 +1575,17 @@ Return ONLY the JSON, no other text."""
 
             try:
 
-                await websocket.send_json({"type": "review", "data": {"error": "Interview too short to generate meaningful review"}})
+                await websocket.send_json(
+                    {
+                        "type": "review",
+                        "data": {
+                            "error": (
+                                "Interview too short to generate "
+                                "meaningful review"
+                            )
+                        }
+                    }
+                )
 
                 review_sent = True
 
@@ -1262,20 +1596,18 @@ Return ONLY the JSON, no other text."""
                 pass
 
 
-
     except Exception as e:
 
-        print(f"WebSocket error: {e}")
+        print(
+            f"WebSocket error: {e}"
+        )
 
         traceback.print_exc()
 
+
     finally:
 
-        # Only close if we haven't already closed
-
         try:
-
-            # If we sent a review, wait a moment for it to be processed
 
             if review_sent:
 
@@ -1287,18 +1619,19 @@ Return ONLY the JSON, no other text."""
 
             pass
 
-        print(f"Interview ended for session {session_id}")
-
+        print(
+            f"Interview ended for session {session_id}"
+        )
 
 
 # Cleanup task
 
 @app.on_event("startup")
-
 async def startup():
 
-    asyncio.create_task(cleanup_loop())
-
+    asyncio.create_task(
+        cleanup_loop()
+    )
 
 
 async def cleanup_loop():
@@ -1311,26 +1644,48 @@ async def cleanup_loop():
 
         if cleaned:
 
-            print(f"🧹 Cleaned {cleaned} sessions")
-
+            print(
+                f"🧹 Cleaned {cleaned} sessions"
+            )
 
 
 if __name__ == "__main__":
 
-    print("\n" + "="*60)
+    print(
+        "\n" + "=" * 60
+    )
 
-    print("🚀 Server running at http://localhost:8000")
+    print(
+        "🚀 Server running at http://localhost:8000"
+    )
 
-    print("📝 Endpoints:")
+    print(
+        "📝 Endpoints:"
+    )
 
-    print("  - POST /api/parse-resume")
+    print(
+        "  - POST /api/parse-resume"
+    )
 
-    print("  - POST /api/evaluate")
+    print(
+        "  - POST /api/evaluate"
+    )
 
-    print("  - POST /api/tailor")
+    print(
+        "  - POST /api/tailor"
+    )
 
-    print("  - WS  /ws/interview/{session_id}")
+    print(
+        "  - WS  /ws/interview/{session_id}"
+    )
 
-    print("="*60 + "\n")
+    print(
+        "=" * 60 + "\n"
+    )
 
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "app:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )

@@ -46,8 +46,16 @@ class ResumeMasterApp {
 
     // Resume file selection
     document.getElementById("resumeFile")?.addEventListener("change", (e) => {
-      document.getElementById("resumeFileName").textContent =
-        e.target.files[0]?.name || "";
+      const file = e.target.files[0];
+
+      if (!this.validateFile(file)) {
+        e.target.value = "";
+        document.getElementById("resumeFileName").textContent = "";
+        this.validateUploadForm();
+        return;
+      }
+
+      document.getElementById("resumeFileName").textContent = file.name;
 
       this.animateUploadCard("resumeCard");
       this.validateUploadForm();
@@ -55,8 +63,16 @@ class ResumeMasterApp {
 
     // Job file selection
     document.getElementById("jobFile")?.addEventListener("change", (e) => {
-      document.getElementById("jobFileName").textContent =
-        e.target.files[0]?.name || "";
+      const file = e.target.files[0];
+
+      if (!this.validateFile(file)) {
+        e.target.value = "";
+        document.getElementById("jobFileName").textContent = "";
+        this.validateUploadForm();
+        return;
+      }
+
+      document.getElementById("jobFileName").textContent = file.name;
 
       this.animateUploadCard("jobCard");
       this.validateUploadForm();
@@ -278,6 +294,37 @@ class ResumeMasterApp {
   // UI / FILE HANDLING
   // ============================================================
 
+  validateFile(file) {
+    const allowedExtensions = [".pdf", ".docx", ".txt"];
+    const maxFileSize = 5 * 1024 * 1024;
+
+    if (!file) {
+      return false;
+    }
+
+    const fileName = file.name.toLowerCase();
+    const isAllowedType = allowedExtensions.some((extension) =>
+      fileName.endsWith(extension),
+    );
+
+    if (!isAllowedType) {
+      this.showToast(
+        "Unsupported file type. Please use PDF, DOCX, or TXT.",
+        "error",
+      );
+
+      return false;
+    }
+
+    if (file.size > maxFileSize) {
+      this.showToast("File is too large. Maximum size is 5MB.", "error");
+
+      return false;
+    }
+
+    return true;
+  }
+
   animateUploadCard(cardId) {
     const card = document.getElementById(cardId);
 
@@ -317,6 +364,11 @@ class ResumeMasterApp {
         const file = e.dataTransfer.files[0];
 
         if (!file) return;
+
+        if (!this.validateFile(file)) {
+          this.validateUploadForm();
+          return;
+        }
 
         if (id === "resumeCard") {
           const input = document.getElementById("resumeFile");
@@ -415,17 +467,17 @@ class ResumeMasterApp {
     toast.setAttribute("role", "alert");
 
     toast.innerHTML = `
-      <div class="d-flex">
-        <div class="toast-body"></div>
+    <div class="d-flex w-100 align-items-center">
+      <div class="toast-body flex-grow-1"></div>
 
-        <button
-          type="button"
-          class="btn-close btn-close-white"
-          data-bs-dismiss="toast"
-          aria-label="Close"
-        ></button>
-      </div>
-    `;
+      <button
+        type="button"
+        class="btn-close btn-close-white flex-shrink-0 me-2"
+        data-bs-dismiss="toast"
+        aria-label="Close"
+      ></button>
+    </div>
+  `;
 
     // Use textContent so arbitrary API/server errors cannot inject HTML.
     toast.querySelector(".toast-body").textContent = message;
@@ -516,6 +568,14 @@ class ResumeMasterApp {
     const jobFile = document.getElementById("jobFile")?.files[0];
 
     const jobText = document.getElementById("jobText")?.value.trim() || "";
+
+    if (!this.validateFile(resumeFile)) {
+      return;
+    }
+
+    if (jobFile && !this.validateFile(jobFile)) {
+      return;
+    }
 
     if (!resumeFile) {
       this.showToast("Please select a resume first.", "error");
